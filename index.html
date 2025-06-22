@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>筆算ドリルジェネレータ</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🧮 筆算ドリル</h1>
+
+  <div class="controls">
+    <label>桁数：
+      <select id="digits">
+        <option value="1">1桁</option>
+        <option value="2" selected>2桁</option>
+        <option value="3">3桁</option>
+        <option value="4">4桁</option>
+      </select>
+    </label>
+    <label>問題の種類：
+      <select id="problemType">
+        <option value="addition">足し算</option>
+        <option value="subtraction">引き算</option>
+        <option value="multiplication">掛け算</option>
+        <option value="add_subtract_shuffle">足し算/引き算 (シャッフル)</option>
+        <option value="all_shuffle" selected>ぜんぶ (シャッフル)</option>
+      </select>
+    </label>
+    <label>ページ数：<input type="number" id="pages" min="1" max="10" value="1"></label>
+    <button id="generateBtn">生成</button>
+    <button id="printBtn">印刷</button>
+  </div>
+
+  <div id="container"></div>
+
+  <script>
+    const PROBLEMS_PER_PAGE = 40; // 4×10
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const maxValue = d => 10 ** d - 1;
+    const hasCarry = (a, b) => { while (a > 0 || b > 0) { if (((a % 10) + (b % 10)) >= 10) return true; a = Math.floor(a / 10); b = Math.floor(b / 10);} return false; };
+    const hasBorrow = (a, b) => { while (a > 0 || b > 0) { if ((a % 10) < (b % 10)) return true; a = Math.floor(a / 10); b = Math.floor(b / 10);} return false; };
+    const LINE_CHAR = '￣';
+
+    const formatVertical = (a, b, op, withAnswerSpace = false, digits) => {
+      const s_a = String(a).split('');
+      const s_b = String(b).split('');
+      const res = op === '×' ? a * b : (op === '+' ? a + b : a - b);
+      const s_res = String(res).split('');
+
+      const numColumns = digits + 1;
+      
+      let firstLine = s_a.map(d => `<span class="digit">${d}</span>`).join('');
+      firstLine = `<span class="digit"></span>`.repeat(numColumns - s_a.length) + firstLine;
+
+      let secondLine = s_b.map(d => `<span class="digit">${d}</span>`).join('');
+      secondLine = `<span class="operator">${op}</span>` + `<span class="digit"></span>`.repeat(numColumns - s_b.length - 1) + secondLine;
+
+      const thirdLine = `<span class="line"></span>`;
+      
+      let html = `<div class="hissan-grid columns-${numColumns}">${firstLine}${secondLine}${thirdLine}`;
+
+      if (withAnswerSpace) {
+        let answerLine = s_res.map(d => `<span class="digit">${d}</span>`).join('');
+        answerLine = `<span class="digit"></span>`.repeat(numColumns - s_res.length) + answerLine;
+        html += answerLine;
+      }
+      
+      html += `</div>`;
+      return html;
+    };
+
+    function createAdditionProblem(digits) {
+        const needCarry = Math.random() < 0.8;
+        let a, b;
+        while (true) {
+            a = randInt(10 ** (digits - 1), maxValue(digits));
+            b = randInt(1, maxValue(randInt(1, digits)));
+            if (a + b < maxValue(digits) && ((needCarry && hasCarry(a, b)) || (!needCarry && !hasCarry(a, b)))) {
+                return { problem: formatVertical(a, b, '+', false, digits), answer: a + b };
+            }
+        }
+    }
+
+    function createSubtractionProblem(digits) {
+        const needBorrow = Math.random() < 0.8;
+        let a, b;
+        while (true) {
+            a = randInt(10 ** (digits - 1), maxValue(digits));
+            b = randInt(1, maxValue(randInt(1, digits)));
+            if (a < b) [a, b] = [b, a];
+            if ((needBorrow && hasBorrow(a, b)) || (!needBorrow && !hasBorrow(a, b))) {
+                return { problem: formatVertical(a, b, '-', false, digits), answer: a - b };
+            }
+        }
+    }
+
+    function createMultiplicationProblem(digits) {
+        const a = randInt(2, maxValue(digits));
+        const b = randInt(2, maxValue(randInt(1, digits)));
+        return { problem: formatVertical(a, b, '×', false, digits), answer: a * b };
+    }
+
+    function createProblem(digits, type) {
+      switch (type) {
+        case 'addition':
+          return createAdditionProblem(digits);
+        case 'subtraction':
+          return createSubtractionProblem(digits);
+        case 'multiplication':
+          return createMultiplicationProblem(digits);
+        case 'add_subtract_shuffle':
+          return Math.random() < 0.5 ? createAdditionProblem(digits) : createSubtractionProblem(digits);
+        case 'all_shuffle':
+        default:
+          const rand = Math.random();
+          if (rand < 0.33) return createMultiplicationProblem(digits);
+          return rand < 0.66 ? createAdditionProblem(digits) : createSubtractionProblem(digits);
+      }
+    }
+
+    function renderSheets(digits, pages, problemType) {
+      const container = document.getElementById('container');
+      container.innerHTML = '';
+      for (let pg = 1; pg <= pages; pg++) {
+        const page = document.createElement('div');
+        page.className = 'page';
+
+        const qSheet = document.createElement('div');
+        qSheet.className = 'sheet';
+
+        const answers = [];
+        for (let i = 0; i < PROBLEMS_PER_PAGE; i++) {
+          const { problem, answer } = createProblem(digits, problemType);
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.innerHTML = problem; // Use innerHTML to render the grid
+          qSheet.appendChild(cell);
+          answers.push(answer);
+        }
+        page.appendChild(qSheet);
+
+        const aWrap = document.createElement('div');
+        aWrap.className = 'answer-sheet';
+        const aSheet = document.createElement('div');
+        aSheet.className = 'sheet';
+        answers.forEach(ans => {
+          const c = document.createElement('div');
+          c.className = 'cell';
+          c.innerHTML = `<div class="hissan-grid columns-5" style="align-items:center; justify-content:center;">${ans}</div>`;
+          aSheet.appendChild(c);
+        });
+        aWrap.appendChild(aSheet);
+        page.appendChild(aWrap);
+        container.appendChild(page);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const digitsEl = document.getElementById('digits');
+      const pagesEl = document.getElementById('pages');
+      const generateBtn = document.getElementById('generateBtn');
+      
+      const generate = () => {
+        const problemType = document.getElementById('problemType').value;
+        renderSheets(+digitsEl.value, +pagesEl.value, problemType);
+      };
+
+      generateBtn.onclick = generate;
+      document.getElementById('printBtn').onclick = () => window.print();
+      
+      generate(); // 初期表示
+    });
+  </script>
+</body>
+</html>
