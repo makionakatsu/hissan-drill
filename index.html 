@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>筆算ドリルジェネレータ</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;}
+    body{
+      margin:20px;
+      font-family:"Baloo 2","Segoe UI",Arial,sans-serif;
+      background:#fdfcfb;
+      color:#333;
+    }
+    h1{
+      font-size:2rem;
+      margin:0 0 16px;
+      color:#ff6f61;
+      text-shadow:1px 1px #fff;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    /* ─── 操作バー ─── */
+    .controls{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      margin-bottom:20px;
+      flex-wrap:wrap;
+      background:#fff;
+      box-shadow:0 2px 5px rgba(0,0,0,.1);
+      padding:8px 14px;
+      border-radius:8px;
+    }
+    .controls label{
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:4px;
+    }
+    input[type="number"],select{
+      padding:4px 6px;
+      border:1px solid #bbb;
+      border-radius:6px;
+      font-family:inherit;
+      font-size:1rem;
+    }
+    button{
+      padding:8px 18px;
+      border:none;
+      border-radius:8px;
+      font-size:1rem;
+      font-weight:600;
+      color:#fff;
+      background:#ff6f61;
+      cursor:pointer;
+      transition:background .2s,transform .1s;
+    }
+    button:hover{background:#ff856e;}
+    button:active{transform:scale(.96);}
+    /* ─── 4×10 グリッド (40問) ─── */
+    .sheet{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+      margin-bottom:36px;
+      counter-reset:prob;
+    }
+    .cell{
+      border:2px solid #ffda8a;
+      background:#fffbe8;
+      border-radius:12px;
+      box-shadow:0 2px 4px rgba(0,0,0,.08);
+      padding:6px;
+      font-family:"Courier New",Courier,monospace;
+      font-variant-numeric:tabular-nums;
+      font-size:16pt;
+      line-height:1.35em;
+      min-height:110px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      white-space:pre;
+      position:relative;
+      overflow:hidden;
+    }
+    .cell::after{
+      counter-increment:prob;
+      content:counter(prob);
+      position:absolute;
+      bottom:4px;
+      right:8px;
+      font-size:9pt;
+      color:#ff9f3f;
+      opacity:.8;
+    }
+    /* ─── 解答シート ─── */
+    .answer-sheet .cell{
+      background:#fff;
+      border-color:#bcdfff;
+    }
+    .answer-sheet .cell::after{
+      color:#2b7bff;
+      opacity:.7;
+    }
+    .answer-sheet{page-break-before:always;}
+    .page{page-break-after:always;}
+    /* ─── 印刷スタイル ─── */
+    @media print{
+      body{
+        margin:8mm;
+        background:none;
+        color:#000;
+        font-family:"Courier New",Courier,monospace;
+      }
+      .controls{display:none;}
+      .sheet{gap:4px;}
+      .cell{
+        border:1px solid #000;
+        background:none;
+        box-shadow:none;
+        font-size:14pt;
+        border-radius:0;
+        min-height:95px;
+      }
+      .cell::after{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <h1>🧮 筆算ドリル</h1>
+
+  <div class="controls">
+    <label>桁数：
+      <select id="digits">
+        <option value="1">1桁</option>
+        <option value="2" selected>2桁</option>
+        <option value="3">3桁</option>
+        <option value="4">4桁</option>
+      </select>
+    </label>
+    <label>ページ数：<input type="number" id="pages" min="1" max="10" value="1"></label>
+    <button id="generateBtn">生成</button>
+    <button id="printBtn">印刷</button>
+  </div>
+
+  <div id="container"></div>
+
+  <script>
+    const PROBLEMS_PER_PAGE = 40; // 4×10
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const maxValue = d => 10 ** d - 1;
+    const hasCarry = (a, b) => { while (a || b) { if (((a % 10) + (b % 10)) >= 10) return true; a = Math.floor(a / 10); b = Math.floor(b / 10);} return false; };
+    const hasBorrow = (a, b) => { while (a || b) { if ((a % 10) < (b % 10)) return true; a = Math.floor(a / 10); b = Math.floor(b / 10);} return false; };
+    const LINE_CHAR = '\u2500';
+    const formatVertical = (a, b, op) => {
+      const width = Math.max(String(a).length, String(b).length);
+      const len = width + 1;
+      return ` ${String(a).padStart(width)}\n${op}${String(b).padStart(width)}\n${LINE_CHAR.repeat(len)}\n${' '.repeat(len)}`;
+    };
+    function createProblem(digits) {
+      const needCarry = Math.random() < 0.8;
+      const add = Math.random() < 0.5;
+      const lim = maxValue(digits);
+      let a, b, ok = false;
+      while (!ok) {
+        a = randInt(10 ** (digits - 1), lim);
+        b = randInt(1, lim);
+        if (add) {
+          if (needCarry && !hasCarry(a, b)) continue;
+          if (!needCarry && hasCarry(a, b)) continue;
+          ok = true;
+        } else {
+          if (a < b) [a, b] = [b, a];
+          if (needCarry && !hasBorrow(a, b)) continue;
+          if (!needCarry && hasBorrow(a, b)) continue;
+          ok = true;
+        }
+      }
+      return { problem: formatVertical(a, b, add ? '+' : '-'), answer: add ? a + b : a - b };
+    }
+    function renderSheets(digits, pages) {
+      const container = document.getElementById('container');
+      container.innerHTML = '';
+      for (let pg = 1; pg <= pages; pg++) {
+        const page = document.createElement('div');
+        page.className = 'page';
+
+        const qSheet = document.createElement('div');
+        qSheet.className = 'sheet';
+
+        const answers = [];
+        for (let i = 0; i < PROBLEMS_PER_PAGE; i++) {
+          const { problem, answer } = createProblem(digits);
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.textContent = problem;
+          qSheet.appendChild(cell);
+          answers.push(answer);
+        }
+        page.appendChild(qSheet);
+
+        const aWrap = document.createElement('div');
+        aWrap.className = 'answer-sheet';
+        const aSheet = document.createElement('div');
+        aSheet.className = 'sheet';
+        answers.forEach(ans => {
+          const c = document.createElement('div');
+          c.className = 'cell';
+          c.textContent = ans;
+          aSheet.appendChild(c);
+        });
+        aWrap.appendChild(aSheet);
+        page.appendChild(aWrap);
+        container.appendChild(page);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const digitsEl = document.getElementById('digits');
+      const pagesEl = document.getElementById('pages');
+      document.getElementById('generateBtn').onclick = () => renderSheets(+digitsEl.value, +pagesEl.value);
+      document.getElementById('printBtn').onclick = () => window.print();
+    });
+  </script>
+</body>
+</html>

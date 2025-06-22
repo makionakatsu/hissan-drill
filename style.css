@@ -1,0 +1,157 @@
+* { box-sizing: border-box; }
+
+/* -------- Base Layout -------- */
+body {
+  margin: 20px;
+  font-family: "Baloo 2", "Segoe UI", Arial, sans-serif;
+  background: #fdfcfb;
+  color: #333;
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0 0 16px;
+  color: #ff6f61;
+  text-shadow: 1px 1px #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* -------- Control Bar -------- */
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+
+.controls label {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+input[type="number"],
+select {
+  padding: 4px 6px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #ff6f61;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+button:hover {
+  background: #ff856e;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+/* -------- 4×10 Grid (40 problems) -------- */
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 36px;
+  counter-reset: prob;
+}
+
+.cell {
+  border: 2px solid #ffda8a;
+  background: #fffbe8;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  font-family: "Courier New", Courier, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 16pt;
+  line-height: 1.35em;
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: pre;
+  position: relative;
+  overflow: hidden;
+}
+
+.cell::after {
+  counter-increment: prob;
+  content: counter(prob);
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-size: 9pt;
+  color: #ff9f3f;
+  opacity: 0.8;
+}
+
+/* -------- Answer Sheet tweaks -------- */
+.answer-sheet .cell {
+  background: #fff;
+  border-color: #bcdfff;
+}
+
+.answer-sheet .cell::after {
+  color: #2b7bff;
+  opacity: 0.7;
+}
+
+.answer-sheet {
+  page-break-before: always;
+}
+
+.page {
+  page-break-after: always;
+}
+
+/* -------- Print Styles -------- */
+@media print {
+  body {
+    margin: 8mm;
+    background: none;
+    color: #000;
+    font-family: "Courier New", Courier, monospace;
+  }
+
+  .controls {
+    display: none;
+  }
+
+  .sheet {
+    gap: 4px;
+  }
+
+  .cell {
+    border: 1px solid #000;
+    background: none;
+    box-shadow: none;
+    font-size: 14pt;
+    border-radius: 0;
+    min-height: 95px;
+  }
+
+  .cell::after {
+    display: none;
+  }
+}
