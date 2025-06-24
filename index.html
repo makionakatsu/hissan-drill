@@ -148,16 +148,19 @@
             if (currentAnswerCell && currentAnswerCell !== cell) {
               currentAnswerCell.innerHTML = currentAnswerCell.dataset.problem;
               currentAnswerCell.dataset.state = 'prob';
+              currentAnswerCell.classList.remove('is-showing-answer');
             }
 
             // toggle the clicked cell
             if (cell.dataset.state === 'prob') {
               cell.textContent = cell.dataset.answer;
               cell.dataset.state = 'ans';
+              cell.classList.add('is-showing-answer');
               currentAnswerCell = cell;
             } else {
               cell.innerHTML = cell.dataset.problem;
               cell.dataset.state = 'prob';
+              cell.classList.remove('is-showing-answer');
               currentAnswerCell = null;
             }
           });
@@ -173,7 +176,7 @@
         answers.forEach(ans => {
           const c = document.createElement('div');
           c.className = 'cell';
-          c.innerHTML = `<div class="hissan-grid columns-5" style="align-items:center; justify-content:center;">${ans}</div>`;
+          c.innerHTML = `<div class="hissan-grid columns-5 answer-cell-content">${ans}</div>`;
           aSheet.appendChild(c);
         });
         aWrap.appendChild(aSheet);

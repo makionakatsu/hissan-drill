@@ -144,6 +144,11 @@ button:active {
   box-shadow: var(--shadow-md);
 }
 
+.cell.is-showing-answer {
+  background-color: var(--color-bg);
+  font-weight: 700;
+}
+
 .cell::after {
   counter-increment: prob;
   content: counter(prob);
@@ -178,8 +183,18 @@ button:active {
   grid-column: 1 / -1; /* Span all columns */
 }
 
+.answer-cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 /* -------- Answer Sheet -------- */
+.answer-sheet {
+  display: none; /* Hide by default */
+  page-break-before: always;
+}
 .answer-sheet .cell {
   background-color: #fff8e1;
   border-color: var(--color-accent);
@@ -187,9 +202,6 @@ button:active {
 .answer-sheet .cell::after {
   background-color: var(--color-accent);
   color: var(--color-text);
-}
-.answer-sheet {
-  page-break-before: always;
 }
 .page {
   page-break-after: always;
@@ -227,8 +239,11 @@ button:active {
   .cell:hover {
     transform: none;
   }
-  .cell::after, .answer-sheet {
+  .cell::after {
     display: none;
+  }
+  .answer-sheet {
+    display: block; /* Show for printing */
   }
   .hissan-grid {
     column-gap: −4px;
