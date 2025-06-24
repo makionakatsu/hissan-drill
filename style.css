@@ -222,7 +222,8 @@ button:active {
     padding: 0;
     background: none;
   }
-  .controls {
+  .controls,
+  h1 {
     display: none;
   }
   .sheet {

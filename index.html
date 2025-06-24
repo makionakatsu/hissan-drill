@@ -128,7 +128,9 @@
       container.innerHTML = '';
       for (let pg = 1; pg <= pages; pg++) {
         const page = document.createElement('div');
-        page.className = 'page';
+        if (pages > 1) {
+          page.className = 'page';
+        }
 
         const qSheet = document.createElement('div');
         qSheet.className = 'sheet';
@@ -169,7 +171,11 @@
         }
         page.appendChild(qSheet);
 
+        // If user selected 1 page, skip printing the answer sheet
+        const hideAnswerForSingle = (pages === 1);
+
         const aWrap = document.createElement('div');
+        if (hideAnswerForSingle) aWrap.classList.add('no-print');
         aWrap.className = 'answer-sheet';
         const aSheet = document.createElement('div');
         aSheet.className = 'sheet';
