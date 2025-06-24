@@ -237,3 +237,46 @@ button:active {
     border-bottom-color: #000;
   }
 }
+
+/* ---------- Mobile Responsive (≤ 600 px) ---------- */
+@media (max-width: 600px) {
+  /* Stack control bar vertically and full‑width elements */
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    border-radius: 20px;
+  }
+
+  .controls label,
+  .controls button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Smaller heading */
+  h1 {
+    font-size: 1.6rem;
+    gap: 6px;
+  }
+
+  /* Two‑column grid for small screens */
+  .sheet {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* Adjust cell size & font */
+  .cell {
+    font-size: 1.3rem;
+    min-height: 100px;
+    padding: 10px;
+  }
+
+  /* Hide hover lift on touch devices */
+  .cell:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+  }
+}
